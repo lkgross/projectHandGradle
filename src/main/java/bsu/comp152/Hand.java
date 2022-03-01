@@ -32,4 +32,19 @@ public class Hand {
     // Declare it as an integer.
     private int numCards;
 
+    /*
+     * getTotalValue - computes and returns the sum of the values
+     * of the cards in the cards array.
+     * If the Hand is currently empty (i.e., has no cards),
+     * the method returns 0.
+     */
+    public int getTotalValue(){
+        int value = 0;
+        // Calculate the running value by adding the
+        // value of each card in the hand.
+        for (int i = 0; i < numCards; i++)
+            value += cards[i].getValue();
+        return value;
+    }
+
 }
