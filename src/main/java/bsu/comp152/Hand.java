@@ -40,11 +40,9 @@ public class Hand {
      */
     public int getTotalValue(){
         int value = 0;
-        // Calculate the running value by adding the
-        // value of each card in the hand.
-        for (int i = 0; i < numCards; i++)
+        for (int i = 0; i < numCards; i++) {
             value += cards[i].getValue();
+        }
         return value;
     }
-
 }
