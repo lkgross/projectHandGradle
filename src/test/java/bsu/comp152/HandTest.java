@@ -12,22 +12,11 @@ import static org.hamcrest.collection.ArrayMatching.arrayContaining;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import static bsu.comp152.HelperMethods.*;
+
 public class HandTest {
 
     private Hand testHand;
-
-    // helper method to get array of cards from a hand
-    private Card[] getCards(Hand hand, int maxCards) {
-        Card[] cards = new Card[maxCards];
-        for (int i = 0; i < maxCards; i++) {
-            try {
-                cards[i] = hand.getCard(i);
-            } catch (IllegalArgumentException e) {
-                break;
-            }
-        }
-        return cards;
-    }
 
     @BeforeEach
     public void setup() {
@@ -108,9 +97,15 @@ public class HandTest {
     }
 
     @Test
+    public void toStringDoesntHaveTrailingComma() {
+        testHand = makeHand(2, 2, 2, 2);
+        assertThat(testHand.toString(), not(containsString(",]")));
+        assertThat(testHand.toString(), not(containsString(", ]")));
+    }
+
+    @Test
     public void toStringOfTwoCardsContainsCommas() {
-        testHand.addCard(new Card(2, 2));
-        testHand.addCard(new Card(2, 2));
+        testHand = makeHand(2, 2, 2, 2);
         assertThat(testHand.toString(), containsString(","));
     }
 
@@ -122,8 +117,7 @@ public class HandTest {
 
     @Test
     public void getCardThrowsIllegalArgumentExceptionWhenNoCardInPosition() {
-        testHand.addCard(new Card(2, 2));
-        testHand.addCard(new Card(3, 2));
+        testHand = makeHand(2, 2, 3, 2);
         assertThrows(IllegalArgumentException.class, () -> testHand.getCard(2));
     }
 
@@ -141,7 +135,7 @@ public class HandTest {
 
     @Test
     public void getCardReturnsFirstCardWhenOneCardInHand() {
-        Card c = new Card(2, 2);
+        Card c = new Card(3, 2);
         testHand.addCard(c);
         assertThat(testHand.getCard(0), equalTo(c));
     }
@@ -154,8 +148,7 @@ public class HandTest {
 
     @Test
     public void playCardThrowsIllegalArgumentExceptionWhenNoCardInPosition() {
-        testHand.addCard(new Card(2, 2));
-        testHand.addCard(new Card(2, 2));
+        testHand = makeHand(2, 2, 2, 2);
         assertThrows(IllegalArgumentException.class, () -> testHand.playCard(3));
     }
 
@@ -179,7 +172,7 @@ public class HandTest {
     }
 
     @Test
-    public void playCardRemovesCardWhenHandHasOneCard() throws NoSuchFieldException {
+    public void playCardRemovesCardWhenHandHasOneCard() {
         testHand.addCard(new Card(6, Card.HEARTS));
         // make sure a card is actually added
         assertThat(getCards(testHand, 5), not(equalTo(new Card[5])));
@@ -189,11 +182,11 @@ public class HandTest {
 
     @Test
     public void playCardShiftsRemainingCardsOver() {
-        testHand.addCard(new Card(6, Card.HEARTS));
-        testHand.addCard(new Card(7, Card.HEARTS));
-        testHand.addCard(new Card(8, Card.HEARTS));
-        testHand.addCard(new Card(9, Card.HEARTS));
-        testHand.addCard(new Card(10, Card.HEARTS));
+        testHand = makeHand(6, Card.HEARTS,
+                            7, Card.HEARTS,
+                            8, Card.HEARTS,
+                            9, Card.HEARTS,
+                            10, Card.HEARTS);
 
         testHand.playCard(2);
 
@@ -210,31 +203,206 @@ public class HandTest {
 
     @Test
     public void playCardReturnsLastCard() {
-        testHand.addCard(new Card(6, Card.HEARTS));
-        testHand.addCard(new Card(7, Card.HEARTS));
-        testHand.addCard(new Card(8, Card.HEARTS));
-        testHand.addCard(new Card(9, Card.HEARTS));
-        testHand.addCard(new Card(10, Card.HEARTS));
+        testHand = makeHand(6, Card.HEARTS,
+                            7, Card.HEARTS,
+                            8, Card.HEARTS,
+                            9, Card.HEARTS,
+                            10, Card.HEARTS);
         assertThat(testHand.playCard(4), equalTo(new Card(10, Card.HEARTS)));
     }
 
     @Test
     public void playCardRemovesLastCard() {
-        testHand.addCard(new Card(6, Card.HEARTS));
-        testHand.addCard(new Card(7, Card.HEARTS));
-        testHand.addCard(new Card(8, Card.HEARTS));
-        testHand.addCard(new Card(9, Card.HEARTS));
-        testHand.addCard(new Card(10, Card.HEARTS));
+        testHand = makeHand(6, Card.HEARTS,
+                            7, Card.HEARTS,
+                            8, Card.HEARTS,
+                            9, Card.HEARTS,
+                            10, Card.HEARTS);
         testHand.playCard(4);
         assertThat(Arrays.asList(getCards(testHand, 5)), not(hasItem(new Card(10, Card.HEARTS))));
     }
 
     @Test
     public void playCardDecrementsNumCards() {
-        testHand.addCard(new Card(2, 2));
-        testHand.addCard(new Card(2, 3));
-        int initiaNumCards = testHand.getNumCards();
+        testHand = makeHand(2, 2, 2, 3);
+        int initialNumCards = testHand.getNumCards();
         testHand.playCard(0);
-        assertThat(testHand.getNumCards(), equalTo(initiaNumCards - 1));
+        assertThat(testHand.getNumCards(), equalTo(initialNumCards - 1));
+    }
+
+    // highCard
+
+    @Test
+    public void highCardReturnsHighCardWhenOneCardInHand() {
+        testHand.addCard(new Card(3, 2));
+        assertThat(testHand.highCard(), equalTo(new Card(3, 2)));
+    }
+
+    @Test
+    public void highCardReturnsHighCardWhenHandFull() {
+        testHand = makeHand(2, Card.CLUBS,
+                            3, Card.CLUBS,
+                            4, Card.CLUBS,
+                            5, Card.CLUBS,
+                            6, Card.CLUBS);
+        assertThat(testHand.highCard(), equalTo(new Card(6, 2)));
+    }
+
+    @Test
+    public void highCardReturnsClosestToBeginningIfTie() {
+        testHand = makeHand(3, 3, 4, 2, 4, 1);
+        assertThat(testHand.highCard(), equalTo(new Card(4, 2)));
+
+    }
+
+    // numCardsOfRank
+
+    @Test
+    public void numCardsOfRankReturnsOneWhenOneOfEachCardInHand() {
+        Hand bigHand = new Hand(13);
+        for (int r = 1; r <= 13; r++) {
+            bigHand.addCard(new Card(r, 2));
+        }
+        for (int r = 1; r <= 13; r++) {
+            assertThat(bigHand.numCardsOfRank(r), equalTo(1));
+        }
+    }
+
+    @Test
+    public void numCardsOfRankReturns0WhenNoCardsInHand() {
+        for (int r = 1; r <= 13; r++) {
+            assertThat(testHand.numCardsOfRank(r), equalTo(0));
+        }
+    }
+
+    @Test
+    public void numCardsOfRankReturnsFourWhenFourOfEachInHand() {
+        Hand bigHand = new Hand(52);
+        for (int r = 1; r <= 13; r++) {
+            bigHand.addCard(new Card(r, 0));
+            bigHand.addCard(new Card(r, 1));
+            bigHand.addCard(new Card(r, 2));
+            bigHand.addCard(new Card(r, 3));
+        }
+        for (int r = 1; r <= 13; r++) {
+            assertThat(bigHand.numCardsOfRank(r), equalTo(4));
+        }
+
+    }
+
+    // hasFlush
+
+    @Test
+    public void hasFlushReturnsTrueForOneCard() {
+        testHand.addCard(new Card(3, 2));
+        assertThat(testHand.hasFlush(), equalTo(true));
+    }
+
+    @Test
+    public void hasFlushReturnsTrueForAllHearts() {
+        for (int r = 1; r <= 5; r++) {
+            testHand.addCard(new Card(r, Card.HEARTS));
+        }
+        assertThat(testHand.hasFlush(), equalTo(true));
+    }
+
+    @Test
+    public void hasFlushReturnsTrueForAllDiamonds() {
+        for (int r = 1; r <= 5; r++) {
+            testHand.addCard(new Card(r, Card.DIAMONDS));
+        }
+        assertThat(testHand.hasFlush(), equalTo(true));
+    }
+
+    @Test
+    public void hasFlushReturnsTrueForAllClubs() {
+        for (int r = 1; r <= 5; r++) {
+            testHand.addCard(new Card(r, Card.CLUBS));
+        }
+        assertThat(testHand.hasFlush(), equalTo(true));
+    }
+
+    @Test
+    public void hasFlushReturnsTrueForAllSpades() {
+        for (int r = 1; r <= 5; r++) {
+            testHand.addCard(new Card(r, Card.SPADES));
+        }
+        assertThat(testHand.hasFlush(), equalTo(true));
+    }
+
+    @Test
+    public void hasFlushReturnsFalseWhenOneOfEachSuit() {
+        for (int s = 0; s < 4; s++) {
+            testHand.addCard(new Card(3, s));
+        }
+        assertThat(testHand.hasFlush(), equalTo(false));
+    }
+
+    @Test
+    public void hasFlushReturnsFalseWhenFirstCardDoesntMatch() {
+        for (int mainSuit = 0; mainSuit < 4; mainSuit++) {
+            for (int otherSuit = 0; otherSuit < 4; otherSuit++) {
+                testHand = makeHand(3, otherSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit);
+                if (mainSuit != otherSuit) {
+                    String reason = "suit " + Card.SUIT_NAMES[otherSuit] + " does not match suit " + Card.SUIT_NAMES[mainSuit];
+                    assertThat(reason, testHand.hasFlush(), equalTo(false));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void hasFlushReturnsFalseWhenSecondCardDoesntMatch() {
+        for (int mainSuit = 0; mainSuit < 4; mainSuit++) {
+            for (int otherSuit = 0; otherSuit < 4; otherSuit++) {
+                testHand = makeHand(3, mainSuit,
+                        3, otherSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit);
+                if (mainSuit != otherSuit) {
+                    String reason = "suit " + Card.SUIT_NAMES[otherSuit] + " does not match suit " + Card.SUIT_NAMES[mainSuit];
+                    assertThat(reason, testHand.hasFlush(), equalTo(false));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void hasFlushReturnsFalseWhenSecondToLastCardDoesntMatch() {
+        for (int mainSuit = 0; mainSuit < 4; mainSuit++) {
+            for (int otherSuit = 0; otherSuit < 4; otherSuit++) {
+                testHand = makeHand(3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, otherSuit,
+                        3, mainSuit);
+                if (mainSuit != otherSuit) {
+                    String reason = "suit " + Card.SUIT_NAMES[otherSuit] + " does not match suit " + Card.SUIT_NAMES[mainSuit];
+                    assertThat(reason, testHand.hasFlush(), equalTo(false));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void hasFlushReturnsFalseWhenLastCardDoesntMatch() {
+        for (int mainSuit = 0; mainSuit < 4; mainSuit++) {
+            for (int otherSuit = 0; otherSuit < 4; otherSuit++) {
+                testHand = makeHand(3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, mainSuit,
+                        3, otherSuit);
+                if (mainSuit != otherSuit) {
+                    String reason = "suit " + Card.SUIT_NAMES[otherSuit] + " does not match suit " + Card.SUIT_NAMES[mainSuit];
+                    assertThat(reason, testHand.hasFlush(), equalTo(false));
+                }
+            }
+        }
     }
 }
